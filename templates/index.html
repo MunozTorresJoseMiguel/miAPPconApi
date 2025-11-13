@@ -1,0 +1,80 @@
+{%extends "base.html"%}
+
+
+{%block title%}Busca de api{%endblock%}
+
+{%block content%}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+    
+      <div class="card shadow rounded-4 border-0">
+        <div class="card-body p-4">
+          <h4 class="text-center mb-3">Busca los nutrientes</h4>
+          <p class="text-center text-muted mb-4">
+            Escribe un ingrediente o el nombre de un platillo.
+          </p>
+
+         
+          <form method="GET" action="/buscar">
+            <div class="input-group input-group-lg">
+              <input 
+                type="text" 
+                name="q"
+                class="form-control" 
+                placeholder="Ej. pollo, ensalada, avena..." 
+                aria-label="Buscar recetas">
+              <button class="btn btn-success" type="submit">
+                🔍 Buscar
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if alimentos %}
+  <div class="row g-3">
+    {% for alimento in alimentos %}
+      <div class="col-12 col-md-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ alimento.nombre }}</h5>
+            <p class="text-muted mb-2">
+              {{ alimento.marca or 'Sin marca' }}
+            </p>
+
+            <ul class="list-group list-group-flush mb-2">
+              <li class="list-group-item">
+                <strong>Energía:</strong> {{ alimento.kcal }} kcal
+              </li>
+              <li class="list-group-item">
+                <strong>Proteínas:</strong> {{ alimento.proteina }} g
+              </li>
+              <li class="list-group-item">
+                <strong>Grasas:</strong> {{ alimento.grasa }} g
+              </li>
+              <li class="list-group-item">
+                <strong>Carbohidratos:</strong> {{ alimento.carbohidratos }} g
+              </li>
+            </ul>
+
+            {% if alimento.porcion %}
+              <small class="text-muted">
+                *Valores por {{ alimento.porcion }}
+              </small>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% elif request.args.get('q') %}
+  <div class="alert alert-warning">
+    No se encontraron resultados para <strong>{{ request.args.get('q') }}</strong>.
+  </div>
+{% endif %}
+{%endblock%}
