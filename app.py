@@ -10,15 +10,13 @@ USDA_API_KEY = "1cCX8y0wpTQRG1fpLyFdZHacgthjLhTdd3N127AA"
 
 @app.route('/lista', methods=['GET'])
 def lista_alimentos():
-    # página actual (?page=2, ?page=3, etc.)
     pagina = request.args.get('page', 1, type=int)
 
     url = "https://api.nal.usda.gov/fdc/v1/foods/list"
-
     params = {
         "api_key": USDA_API_KEY,
         "pageNumber": pagina,
-        "pageSize": 12,    
+        "pageSize": 12,
         "dataType": "Survey (FNDDS),Branded"
     }
 
@@ -31,7 +29,7 @@ def lista_alimentos():
         if response.status_code != 200:
             error = f"Error al consultar la API: {response.status_code}"
         else:
-            data = response.json()  
+            data = response.json()      
 
             for food in data:
                 alimentos.append({
@@ -50,7 +48,6 @@ def lista_alimentos():
         pagina=pagina,
         error=error
     )
-
 
 
 
