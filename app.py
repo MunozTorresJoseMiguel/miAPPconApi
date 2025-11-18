@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,flash, redirect, url_for
 import requests
 
 app = Flask(__name__)
@@ -6,67 +6,51 @@ app = Flask(__name__)
 @app.route("/")
 def hello_world():
     return render_template("index.html")
+USDA_API_KEY = "1cCX8y0wpTQRG1fpLyFdZHacgthjLhTdd3N127AA"
 
+@app.route('/lista', methods=['GET'])
+def lista_alimentos():
+    # página actual (?page=2, ?page=3, etc.)
+    pagina = request.args.get('page', 1, type=int)
 
-DATAFOOD_API_URL = "https://http://127.0.0.1:5000//v1/foods/search"
-DATAFOOD_API_KEY = "1cCX8y0wpTQRG1fpLyFdZHacgthjLhTdd3N127AA" 
+    url = "https://api.nal.usda.gov/fdc/v1/foods/list"
 
-@app.route('/buscar', methods=['POST'])
-def buscar():
-    comida = request.form.get('name', '').strip().lower()
-    
-    if not comida:
-        flash('Por favor ingresa un nombre de comida válido.', 'error')
-        return redirect(url_for('index'))
-    
-
-    API = "https://http://127.0.0.1:5000//v1/foods/search"
-
-    headers = {
-        "Authorization": f"Bearer {DATAFOOD_API_KEY}",
-        "Accept": "application/json"
+    params = {
+        "api_key": USDA_API_KEY,
+        "pageNumber": pagina,
+        "pageSize": 12,    
+        "dataType": "Survey (FNDDS),Branded"
     }
 
+    alimentos = []
+    error = None
+
     try:
-     
-        response = requests.get(API, params={"query": comida}, headers=headers, timeout=10)
+        response = requests.get(url, params=params)
 
-        if response.status_code == 200:
-            data = response.json()
-
-            if not data or "foods" not in data or len(data["foods"]) == 0:
-                flash(f'Comida "{comida}" no encontrada.', 'error')
-                return redirect(url_for('index'))
-
-            lista_comidas = []  
-
-            for alimento in data["foods"]:
-
-                nutrientes = alimento.get("nutrients", {}) 
-
-                comida_info = {
-                    'name': alimento.get('name', 'Sin nombre'),
-                    'marca': alimento.get('brand', 'Sin marca'),
-                    'porcion': alimento.get('serving_size', 'N/A'),
-                    'kcal': nutrientes.get('energy_kcal', 'N/A'),
-                    'proteina': nutrientes.get('protein_g', 'N/A'),
-                    'grasa': nutrientes.get('fat_g', 'N/A'),
-                    'carbohidratos': nutrientes.get('carbs_g', 'N/A'),
-                    'imagen': alimento.get("image", None),  
-                }
-
-                lista_comidas.append(comida_info)
-
-            return render_template('targeta.html', comidas=lista_comidas)
-
+        if response.status_code != 200:
+            error = f"Error al consultar la API: {response.status_code}"
         else:
-            flash('Error al obtener datos de la API.', 'error')
-            return redirect(url_for('index'))
+            data = response.json()  
 
-    except requests.exceptions.RequestException as e:
-        print("API ERROR:", e)
-        flash('Error al conectar con la API. Inténtalo más tarde.', 'error')
-        return redirect(url_for('index'))
+            for food in data:
+                alimentos.append({
+                    "fdc_id": food.get("fdcId"),
+                    "descripcion": food.get("description", "Sin descripción"),
+                    "data_type": food.get("dataType"),
+                    "publicacion": food.get("publicationDate", "N/D"),
+                })
+
+    except Exception as e:
+        error = f"Ocurrió un error: {e}"
+
+    return render_template(
+        "lista.html",
+        alimentos=alimentos,
+        pagina=pagina,
+        error=error
+    )
+
 
 
 
